@@ -41,8 +41,8 @@ fn vs_main(
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let uv = in.uv * 2.0 - 1.0;
-    var dist = sin(length(uv * 8.0 * PI) + u_time.t);
-    dist += sin(atan2(uv.y, uv.x) * 8.0 + u_time.t * 0.5);
+    var dist = sin(length(uv * 8.0 * PI) - u_time.t);
+    dist += sin(atan2(uv.y, uv.x) * 8.0 + u_time.t);
     var color = vec4<f32>(dist, dist, dist, 1.0);
     return color;
 }
