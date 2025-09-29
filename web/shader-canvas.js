@@ -1,9 +1,11 @@
 /**
  * Simple Shader Canvas
- * Usage: new ShaderCanvas('#app-container')
+ * Usage: 
+ *   new ShaderCanvas('#app-container')
+ *   new ShaderCanvas('#app-container', { initialShader: 'your shader code here' })
  */
 class ShaderCanvas {
-    constructor(selector) {
+    constructor(selector, options = {}) {
         this.selector = selector;
         this.container = null;
         this.canvas = null;
@@ -11,8 +13,25 @@ class ShaderCanvas {
         this.statusElement = null;
         this.wasmModule = null;
         this.isInitialized = false;
+        
+        // Extract options
+        this.initialShader = options.initialShader || this.getDefaultShader();
 
         this.init();
+    }
+
+    getDefaultShader() {
+        return `// Fragment shader - write your complete @fragment function
+// The vertex shader and structs will be added automatically
+
+@fragment
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    let uv = in.uv * 2.0 - 1.0;
+    var dist = sin(length(uv * 8.0 * PI) + u_time.t);
+    dist += sin(atan2(uv.y, uv.x) * 8.0 + u_time.t * 0.5);
+    let color = vec4<f32>(dist, dist, dist, 1.0);
+    return color;
+}`;
     }
 
     async init() {
@@ -41,17 +60,7 @@ class ShaderCanvas {
                 <div class="code-editor-container">
                     <textarea id="shader-text" 
                               class="code-editor" 
-                              placeholder="Paste your fragment shader code here...">// Fragment shader - write your complete @fragment function
-// The vertex shader and structs will be added automatically
-
-@fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let uv = in.uv * 2.0 - 1.0;
-    let dist = sin(length(uv * 8.0 * PI) + u_time.t);
-    dist += sin(atan2(uv.y, uv.x) * 8.0 + u_time.t * 0.5);
-    let color = vec4<f32>(dist, dist, dist, 1.0);
-    return color;
-}</textarea>
+                              placeholder="Paste your fragment shader code here...">${this.initialShader}</textarea>
                 </div>
                 <div class="canvas-panel">
                     <canvas id="canvas" class="shader-canvas"></canvas>
@@ -213,18 +222,8 @@ ${fragmentCode}`;
             this.updateStatus('✓ Default shader reloaded', false);
             console.log("Default shader reloaded");
             
-            // Reset to default fragment shader code
-            this.codeEditor.value = `// Fragment shader - write your complete @fragment function
-// The vertex shader and structs will be added automatically
-
-@fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let uv = in.uv * 2.0 - 1.0;
-    var dist = sin(length(uv * 8.0 * PI) + u_time.t);
-    dist += sin(atan2(uv.y, uv.x) * 8.0 + u_time.t * 0.5);
-    let color = vec4<f32>(dist, dist, dist, 1.0);
-    return color;
-}`;
+            // Reset to initial fragment shader code
+            this.codeEditor.value = this.initialShader;
         } catch (error) {
             // Reload failed - show the error message
             this.updateStatus(`✗ Reload failed: ${error.message || error}`, true);
@@ -253,6 +252,10 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     getShaderCode() {
         return this.codeEditor.value;
+    }
+
+    setInitialShader(shaderCode) {
+        this.initialShader = shaderCode;
     }
 
     destroy() {
