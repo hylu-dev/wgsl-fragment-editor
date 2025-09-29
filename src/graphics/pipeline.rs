@@ -13,6 +13,15 @@ pub fn create_render_pipeline(
         source: wgpu::ShaderSource::Wgsl(include_str!("../shader.wgsl").into()),
     });
 
+    create_render_pipeline_with_shader(device, config, camera, &shader)
+}
+
+pub fn create_render_pipeline_with_shader(
+    device: &wgpu::Device,
+    config: &wgpu::SurfaceConfiguration,
+    camera: &Camera,
+    shader: &wgpu::ShaderModule,
+) -> (wgpu::RenderPipeline, wgpu::Buffer, wgpu::BindGroup) {
     let mut camera_uniform = CameraUniform::new();
     camera_uniform.update_view_proj(&camera);
 
@@ -50,7 +59,6 @@ pub fn create_render_pipeline(
         ],
         label: Some("camera_bind_group"),
     });
-
 
     let render_pipeline_layout =
         device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

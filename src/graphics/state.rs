@@ -24,6 +24,7 @@ pub struct State {
     pub camera_buffer: wgpu::Buffer,
     pub camera_bind_group: wgpu::BindGroup,
     pub window: Arc<Window>,
+    pub current_shader: String,
 }
 
 impl State {
@@ -68,6 +69,7 @@ impl State {
             camera_buffer,
             camera_bind_group,
             render_pipeline,
+            current_shader: include_str!("../shader.wgsl").to_string(),
         })
     }
 
@@ -148,5 +150,41 @@ impl State {
 
     pub fn update(&mut self) {
         // Future update logic goes here
+    }
+
+    pub fn load_shader(&mut self, shader_source: &str) -> Result<(), String> {
+        // Validate shader source is not empty
+        if shader_source.trim().is_empty() {
+            return Err("Shader source cannot be empty".to_string());
+        }
+
+        // Try to create a new shader module
+        let shader_result = self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Dynamic Shader"),
+            source: wgpu::ShaderSource::Wgsl(shader_source.into()),
+        });
+
+        // Create new render pipeline with the new shader
+        let (new_render_pipeline, new_camera_buffer, new_camera_bind_group) = 
+            crate::graphics::pipeline::create_render_pipeline_with_shader(
+                &self.device, 
+                &self.config, 
+                &self.camera,
+                &shader_result
+            );
+
+        // If we got here, the shader compiled successfully
+        self.render_pipeline = new_render_pipeline;
+        self.camera_buffer = new_camera_buffer;
+        self.camera_bind_group = new_camera_bind_group;
+        self.current_shader = shader_source.to_string();
+
+        log::info!("Successfully loaded new shader ({} chars)", shader_source.len());
+        Ok(())
+    }
+
+    pub fn reload_default_shader(&mut self) -> Result<(), String> {
+        let default_shader = include_str!("../shader.wgsl");
+        self.load_shader(default_shader)
     }
 }

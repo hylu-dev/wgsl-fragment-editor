@@ -10,11 +10,17 @@ use winit::{
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
+#[cfg(target_arch = "wasm32")]
+use std::sync::Mutex;
+
 use crate::graphics::state::State;
 
 pub struct App {
     #[cfg(target_arch = "wasm32")]
     proxy: Option<winit::event_loop::EventLoopProxy<State>>,
+    #[cfg(target_arch = "wasm32")]
+    state: Option<Arc<Mutex<State>>>,
+    #[cfg(not(target_arch = "wasm32"))]
     state: Option<State>,
 }
 
@@ -86,8 +92,16 @@ impl ApplicationHandler<State> for App {
                 event.window.inner_size().width,
                 event.window.inner_size().height,
             );
+            
+            // Set up global state for WASM functions
+            let state_arc = Arc::new(Mutex::new(event));
+            crate::set_global_state(state_arc.clone());
+            self.state = Some(state_arc);
         }
-        self.state = Some(event);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.state = Some(event);
+        }
     }
 
     fn window_event(
@@ -96,6 +110,13 @@ impl ApplicationHandler<State> for App {
         _window_id: winit::window::WindowId,
         event: WindowEvent,
     ) {
+        #[cfg(target_arch = "wasm32")]
+        let state_ref = match &mut self.state {
+            Some(state_arc) => state_arc,
+            None => return,
+        };
+
+        #[cfg(not(target_arch = "wasm32"))]
         let state = match &mut self.state {
             Some(canvas) => canvas,
             None => return,
@@ -103,18 +124,49 @@ impl ApplicationHandler<State> for App {
 
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
-            WindowEvent::Resized(size) => state.resize(size.width, size.height),
-            WindowEvent::RedrawRequested => {
-                state.update();
-                match state.render() {
-                    Ok(_) => {}
-                    // Reconfigure the surface if it's lost or outdated
-                    Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                        let size = state.window.inner_size();
+            WindowEvent::Resized(size) => {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    if let Ok(mut state) = state_ref.lock() {
                         state.resize(size.width, size.height);
                     }
-                    Err(e) => {
-                        log::error!("Unable to render {}", e);
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    state.resize(size.width, size.height);
+                }
+            }
+            WindowEvent::RedrawRequested => {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    if let Ok(mut state) = state_ref.lock() {
+                        state.update();
+                        match state.render() {
+                            Ok(_) => {}
+                            // Reconfigure the surface if it's lost or outdated
+                            Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
+                                let size = state.window.inner_size();
+                                state.resize(size.width, size.height);
+                            }
+                            Err(e) => {
+                                log::error!("Unable to render {}", e);
+                            }
+                        }
+                    }
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    state.update();
+                    match state.render() {
+                        Ok(_) => {}
+                        // Reconfigure the surface if it's lost or outdated
+                        Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
+                            let size = state.window.inner_size();
+                            state.resize(size.width, size.height);
+                        }
+                        Err(e) => {
+                            log::error!("Unable to render {}", e);
+                        }
                     }
                 }
             }
@@ -126,7 +178,18 @@ impl ApplicationHandler<State> for App {
                         ..
                     },
                 ..
-            } => state.handle_key(event_loop, code, key_state.is_pressed()),
+            } => {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    if let Ok(mut state) = state_ref.lock() {
+                        state.handle_key(event_loop, code, key_state.is_pressed());
+                    }
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    state.handle_key(event_loop, code, key_state.is_pressed());
+                }
+            }
             _ => {}
         }
     }

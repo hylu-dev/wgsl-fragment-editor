@@ -6,6 +6,17 @@ use wasm_bindgen::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use web_sys::console;
 
+#[cfg(target_arch = "wasm32")]
+use std::sync::{Arc, Mutex};
+
+#[cfg(target_arch = "wasm32")]
+use std::cell::RefCell;
+
+#[cfg(target_arch = "wasm32")]
+thread_local! {
+    static GLOBAL_STATE: RefCell<Option<Arc<Mutex<State>>>> = RefCell::new(None);
+}
+
 // Module declarations
 mod app;
 mod graphics;
@@ -45,28 +56,55 @@ pub fn run_web() -> Result<(), wasm_bindgen::JsValue> {
     Ok(())
 }
 
-// Simple shader loading functions that work with the current shader file
 #[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
-pub fn load_shader_from_url(shader_url: &str) -> Result<(), wasm_bindgen::JsValue> {
-    // For now, just log the request - the actual implementation would need
-    // to be integrated into the app's event loop
-    console::log_1(&format!("Request to load shader from: {}", shader_url).into());
-    Err(wasm_bindgen::JsValue::from_str("Shader loading from URL not yet implemented - use load_shader_from_text instead"))
+pub fn set_global_state(state: Arc<Mutex<State>>) {
+    GLOBAL_STATE.with(|global_state| {
+        *global_state.borrow_mut() = Some(state);
+    });
+}
+
+#[cfg(target_arch = "wasm32")]
+fn with_global_state<F, R>(f: F) -> Result<R, wasm_bindgen::JsValue>
+where
+    F: FnOnce(&mut State) -> Result<R, String>,
+{
+    GLOBAL_STATE.with(|global_state| {
+        let state_ref = global_state.borrow();
+        if let Some(state_arc) = state_ref.as_ref() {
+            let mut state = state_arc.lock().map_err(|e| {
+                wasm_bindgen::JsValue::from_str(&format!("Failed to lock state: {}", e))
+            })?;
+            f(&mut *state).map_err(|e| wasm_bindgen::JsValue::from_str(&e))
+        } else {
+            Err(wasm_bindgen::JsValue::from_str("Graphics state not initialized yet"))
+        }
+    })
 }
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn reload_shader() -> Result<(), wasm_bindgen::JsValue> {
-    console::log_1(&"Request to reload shader".into());
-    Err(wasm_bindgen::JsValue::from_str("Shader reloading not yet implemented - use load_shader_from_text instead"))
+    console::log_1(&"Reloading default shader".into());
+    
+    with_global_state(|state| {
+        state.reload_default_shader()
+    })
 }
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn load_shader_from_text(shader_text: &str) -> Result<(), wasm_bindgen::JsValue> {
-    // For now, just log the request - the actual implementation would need
-    // to be integrated into the app's event loop
-    console::log_1(&format!("Request to load shader text ({} chars)", shader_text.len()).into());
-    Err(wasm_bindgen::JsValue::from_str("Shader loading from text not yet implemented - this is a placeholder"))
+    console::log_1(&format!("Loading shader from text ({} chars)", shader_text.len()).into());
+    
+    with_global_state(|state| {
+        state.load_shader(&shader_text)
+    })
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn get_current_shader_text() -> Result<String, wasm_bindgen::JsValue> {
+    with_global_state(|state| {
+        Ok(state.current_shader.clone())
+    })
 }
