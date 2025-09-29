@@ -14,18 +14,21 @@ export default [
       {
         file: 'dist/wgpu-shader-canvas.js',
         format: 'es',
-        sourcemap: !isProduction
+        sourcemap: !isProduction,
+        inlineDynamicImports: true
       },
       {
         file: 'dist/wgpu-shader-canvas.min.js',
         format: 'es',
         sourcemap: !isProduction,
+        inlineDynamicImports: true,
         plugins: [terser()]
       },
       {
         file: 'dist/wgpu-shader-canvas.esm.js',
         format: 'es',
-        sourcemap: !isProduction
+        sourcemap: !isProduction,
+        inlineDynamicImports: true
       }
     ],
     plugins: [

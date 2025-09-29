@@ -74,9 +74,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         this.container.innerHTML = `
             <div class="code-panel">
                 <div class="code-editor-container">
-                    <textarea id="shader-text" 
-                              class="code-editor" 
-                              placeholder="Paste your fragment shader code here...">${this.initialShader}</textarea>
+                    <div id="shader-text" class="code-editor"></div>
                 </div>
                 <div class="canvas-panel">
                     <canvas id="canvas" class="shader-canvas"></canvas>
@@ -87,8 +85,61 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
         // Get references to elements
         this.canvas = document.getElementById('canvas');
-        this.codeEditor = document.getElementById('shader-text');
+        this.codeEditorElement = document.getElementById('shader-text');
         this.statusElement = document.getElementById('shader-status');
+
+        // Initialize CodeMirror 6
+        await this.initializeCodeMirror();
+    }
+
+    async initializeCodeMirror() {
+        // Import CodeMirror 6 modules
+        const { EditorView, basicSetup } = await import('codemirror');
+        const { cpp } = await import('@codemirror/lang-cpp');
+        const { oneDark } = await import('@codemirror/theme-one-dark');
+        const { EditorState } = await import('@codemirror/state');
+
+        // Create CodeMirror 6 editor
+        this.codeEditor = new EditorView({
+            state: EditorState.create({
+                doc: this.initialShader,
+                extensions: [
+                    basicSetup,
+                    cpp(),
+                    oneDark,
+                    EditorView.lineWrapping,
+                    EditorView.theme({
+                        "&": {
+                            height: "100%",
+                            minHeight: "0",
+                            fontSize: "14px"
+                        },
+                        ".cm-content": {
+                            padding: "10px",
+                            height: "100%",
+                            minHeight: "0"
+                        },
+                        ".cm-editor": {
+                            height: "100%",
+                            minHeight: "0"
+                        },
+                        ".cm-scroller": {
+                            fontFamily: "monospace",
+                            overflow: "auto"
+                        },
+                        ".cm-focused": {
+                            outline: "none"
+                        }
+                    }),
+                    EditorView.updateListener.of((update) => {
+                        if (update.docChanged) {
+                            this.onShaderChange();
+                        }
+                    })
+                ]
+            }),
+            parent: this.codeEditorElement
+        });
     }
 
     async loadWasmModule() {
@@ -120,15 +171,14 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         }
     }
 
-    setupEventListeners() {
-        // Auto-load shader on text change
-        this.codeEditor.addEventListener('input', (e) => {
-            const text = e.target.value;
-            this.loadShader(text);
-        });
+    onShaderChange() {
+        const text = this.codeEditor.state.doc.toString();
+        this.loadShader(text);
+    }
 
+    setupEventListeners() {
         // Load initial shader immediately
-        const initialShader = this.codeEditor.value;
+        const initialShader = this.codeEditor.state.doc.toString();
         this.loadShader(initialShader);
 
         // Add hover behavior for error status
@@ -241,7 +291,13 @@ ${fragmentCode}`;
             console.log("Default shader reloaded");
             
             // Reset to initial fragment shader code
-            this.codeEditor.value = this.initialShader;
+            this.codeEditor.dispatch({
+                changes: {
+                    from: 0,
+                    to: this.codeEditor.state.doc.length,
+                    insert: this.initialShader
+                }
+            });
         } catch (error) {
             // Reload failed - show the error message
             this.updateStatus(`✗ Reload failed: ${error.message || error}`, true);
@@ -264,12 +320,17 @@ ${fragmentCode}`;
     }
 
     setShaderCode(code) {
-        this.codeEditor.value = code;
-        this.codeEditor.dispatchEvent(new Event('input'));
+        this.codeEditor.dispatch({
+            changes: {
+                from: 0,
+                to: this.codeEditor.state.doc.length,
+                insert: code
+            }
+        });
     }
 
     getShaderCode() {
-        return this.codeEditor.value;
+        return this.codeEditor.state.doc.toString();
     }
 
     setInitialShader(shaderCode) {
