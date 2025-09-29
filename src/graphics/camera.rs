@@ -47,14 +47,14 @@ impl CameraUniform {
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct TimeUniform {
-    pub u_time: f32,
+    pub t: f32,
     pub _padding: [f32; 3], // Padding to align to 16 bytes
 }
 
 impl TimeUniform {
     pub fn new(time: f32) -> Self {
         Self {
-            u_time: time,
+            t: time,
             _padding: [0.0; 3],
         }
     }

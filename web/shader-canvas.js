@@ -41,33 +41,14 @@ class ShaderCanvas {
                 <div class="code-editor-container">
                     <textarea id="shader-text" 
                               class="code-editor" 
-                              placeholder="Paste your WGSL shader code here...">// Example shader - try editing this!
-const PI: f32 = 3.1415926535;
-
-struct VertexInput {
-    @location(0) pos: vec3<f32>,
-    @location(1) color: vec3<f32>,
-};
-
-struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
-    @location(0) uv: vec2<f32>,
-    @location(1) color: vec3<f32>,
-};
-
-@vertex
-fn vs_main(model: VertexInput) -> VertexOutput {
-    var out: VertexOutput;
-    out.color = model.color;
-    out.clip_position = vec4<f32>(model.pos, 1.0);
-    out.uv = vec2<f32>(model.pos.x * 0.5 + 0.5, model.pos.y * 0.5 + 0.5);
-    return out;
-}
+                              placeholder="Paste your fragment shader code here...">// Fragment shader - write your complete @fragment function
+// The vertex shader and structs will be added automatically
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let uv = in.uv * 2.0 - 1.0;
-    let dist = sin(length(uv * 8.0 * PI));
+    let dist = sin(length(uv * 8.0 * PI) + u_time.t);
+    dist += sin(atan2(uv.y, uv.x) * 8.0 + u_time.t * 0.5);
     let color = vec4<f32>(dist, dist, dist, 1.0);
     return color;
 }</textarea>
@@ -122,33 +103,105 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         // Load initial shader immediately
         const initialShader = this.codeEditor.value;
         this.loadShader(initialShader);
+
+        // Add hover behavior for error status
+        this.statusElement.addEventListener('mouseenter', () => {
+            const detailedError = this.statusElement.dataset.detailedError;
+            if (detailedError) {
+                this.statusElement.textContent = detailedError;
+            }
+        });
+
+        this.statusElement.addEventListener('mouseleave', () => {
+            // Reset to original message
+            this.statusElement.textContent = 'Shader Error';
+        });
     }
 
-    updateStatus(message, isError = false) {
+    updateStatus(message, isError = false, detailedError = '') {
         this.statusElement.textContent = message;
         this.statusElement.className = 'shader-status';
         
         if (isError) {
             this.statusElement.classList.add('show');
+            // Store the detailed error for hover display
+            this.statusElement.dataset.detailedError = detailedError || message;
         } else {
             // Hide status for success (no error)
             this.statusElement.classList.remove('show');
+            this.statusElement.dataset.detailedError = '';
         }
     }
+
+    wrapFragmentShader(fragmentCode) {
+        // Always wrap the fragment code - assume user only writes fragment shader
+        return this.createCompleteShader(fragmentCode);
+    }
+
+    createCompleteShader(fragmentCode) {
+        const vertexShader = `// Vertex shader
+
+const PI: f32 = 3.1415926535;
+
+// Time uniform - 16-byte aligned
+struct TimeUniform {
+    t: f32,
+    _padding: f32,
+    _padding2: f32,
+    _padding3: f32,
+}
+
+@group(0) @binding(0)
+var<uniform> camera: mat4x4<f32>;
+
+@group(0) @binding(1)
+var<uniform> u_time: TimeUniform;
+
+struct VertexInput {
+    @location(0) pos: vec3<f32>,
+    @location(1) color: vec3<f32>,
+};
+
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) uv: vec2<f32>,
+    @location(1) color: vec3<f32>,
+};
+
+@vertex
+fn vs_main(
+    model: VertexInput,
+) -> VertexOutput {
+    var out: VertexOutput;
+    out.color = model.color;
+    out.clip_position = vec4<f32>(model.pos, 1.0);
+    out.uv = vec2<f32>(model.pos.x * 0.5 + 0.5, model.pos.y * 0.5 + 0.5);
+    return out;
+}
+
+${fragmentCode}`;
+
+        return vertexShader;
+    }
+
 
     loadShader(text) {
         console.log("Attempting to load shader");
         try {
+            // Wrap the fragment shader code if needed
+            const completeShader = this.wrapFragmentShader(text);
+            
             // Attempt to load the shader - Rust throws on error, returns undefined on success
-            this.wasmFunctions.load_shader_from_text(text);
+            this.wasmFunctions.load_shader_from_text(completeShader);
             
             // If we get here, the shader loaded successfully
             this.updateStatus('Shader Error', false); // Hide status on success
             //console.log("Shader loaded successfully");
         } catch (error) {
-            // Shader compilation failed - show the error message
-            this.updateStatus(`Shader Error`, true);
-            //console.warn("Caught error:", error);
+            // Shader compilation failed - show the error message with details
+            const errorMessage = error.message || error.toString() || 'Unknown shader error';
+            this.updateStatus('Shader Error', true, errorMessage);
+            console.warn("Shader compilation error:", error);
         }
     }
 
@@ -160,17 +213,18 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
             this.updateStatus('✓ Default shader reloaded', false);
             console.log("Default shader reloaded");
             
-            // Update textarea with current shader
-            setTimeout(() => {
-                try {
-                    const shader = this.wasmFunctions.get_current_shader_text();
-                    if (shader) {
-                        this.codeEditor.value = shader;
-                    }
-                } catch (error) {
-                    // console.error("Failed to get current shader:", error);
-                }
-            }, 100);
+            // Reset to default fragment shader code
+            this.codeEditor.value = `// Fragment shader - write your complete @fragment function
+// The vertex shader and structs will be added automatically
+
+@fragment
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    let uv = in.uv * 2.0 - 1.0;
+    var dist = sin(length(uv * 8.0 * PI) + u_time.t);
+    dist += sin(atan2(uv.y, uv.x) * 8.0 + u_time.t * 0.5);
+    let color = vec4<f32>(dist, dist, dist, 1.0);
+    return color;
+}`;
         } catch (error) {
             // Reload failed - show the error message
             this.updateStatus(`✗ Reload failed: ${error.message || error}`, true);
@@ -178,14 +232,6 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         }
     }
 
-    loadExampleShader(type) {
-        const examples = this.options.exampleShaders;
-        if (examples[type]) {
-            this.codeEditor.value = examples[type];
-            // The input event will automatically trigger shader loading
-            this.codeEditor.dispatchEvent(new Event('input'));
-        }
-    }
 
     // Public API methods
     getCanvas() {
