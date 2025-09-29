@@ -11,8 +11,11 @@
   ],
   "scripts": {
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
+    "optimize:wasm": "wasm-opt pkg/wgpu_shader_canvas_bg.wasm -o pkg/wgpu_shader_canvas_bg.wasm -Oz",
     "build:js": "rollup -c",
-    "build": "npm run build:wasm && npm run build:js",
+    "build:minimal": "rollup -c --environment NODE_ENV:production",
+    "build": "npm run build:wasm && npm run optimize:wasm && npm run build:js",
+    "build:production": "npm run build:wasm && npm run optimize:wasm && npm run build:minimal",
     "dev": "npm run build:wasm && rollup -c -w",
     "clean": "rm -rf dist pkg",
     "prepublishOnly": "npm run clean && npm run build"
@@ -32,7 +35,9 @@
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
+    "prismjs": "^1.30.0",
     "rollup": "^4.52.3",
-    "rollup-plugin-copy": "^3.5.0"
+    "rollup-plugin-copy": "^3.5.0",
+    "rollup-plugin-gzip": "^4.1.1"
   }
 }
