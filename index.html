@@ -15,9 +15,27 @@
             color: white;
         }
         #shader-container {
-            width: 800px;
+            width: 100%;
+            max-width: 800px;
             height: 500px;
             margin: 0 auto;
+        }
+        
+        @media (max-width: 768px) {
+            #shader-container {
+                height: auto;
+                min-height: 500px;
+            }
+            
+            body {
+                padding: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #shader-container {
+                min-height: 400px;
+            }
         }
         h1 {
             text-align: center;

@@ -24,6 +24,30 @@
     border-radius: 0, 8px, 8px, 0;
 }
 
+/* Responsive layout for smaller screens */
+@media (max-width: 768px) {
+    .code-panel {
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .code-editor-container {
+        flex: 1;
+        border-right: none;
+        border-bottom: 1px solid #ccc;
+        min-height: 300px;
+        max-height: 50vh;
+    }
+    
+    .canvas-panel {
+        flex: 0 0 auto;
+        aspect-ratio: 1;
+        border-radius: 8px 8px 0 0;
+        min-height: 200px;
+        max-height: 50vh;
+    }
+}
+
 /* Code Editor */
 .code-editor {
     flex: 1;
@@ -50,6 +74,15 @@
     outline: none !important;
     border: none !important;
     box-shadow: none !important;
+}
+
+/* Responsive canvas styling */
+@media (max-width: 768px) {
+    .shader-canvas {
+        border-radius: 8px 8px 0 0;
+        max-width: 100%;
+        max-height: 100%;
+    }
 }
 
 /* Remove any focus/selection styles */
