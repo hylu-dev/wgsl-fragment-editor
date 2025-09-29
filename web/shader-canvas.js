@@ -143,7 +143,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
             this.wasmFunctions.load_shader_from_text(text);
             
             // If we get here, the shader loaded successfully
-            this.updateStatus('', false); // Hide status on success
+            this.updateStatus('Shader Error', false); // Hide status on success
             console.log("Shader loaded successfully");
         } catch (error) {
             // Shader compilation failed - show the error message

@@ -1,4 +1,6 @@
 /* Shader Canvas Module Styles */
+
+/* Layout Components */
 .code-panel {
     display: flex;
     height: 100%;
@@ -12,12 +14,16 @@
     border-right: 1px solid #ccc;
 }
 
-@media (prefers-color-scheme: dark) {
-    .code-editor-container {
-        border-right-color: #555;
-    }
+.canvas-panel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 auto;
+    position: relative;
+    aspect-ratio: 1;
 }
 
+/* Code Editor */
 .code-editor {
     flex: 1;
     width: 100%;
@@ -31,27 +37,18 @@
     outline: none;
 }
 
-.canvas-panel {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex: 0 0 auto;
-    position: relative;
-}
-
+/* Canvas */
 .shader-canvas {
     width: auto;
     height: 100%;
     aspect-ratio: 1;
     background-color: #000000;
-    border-radius: 0 8px 8px 0px;
+    border-radius: 0 8px 8px 0;
     user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     pointer-events: none;
 }
 
+/* Status Indicator */
 .shader-status {
     position: absolute;
     top: 8px;
