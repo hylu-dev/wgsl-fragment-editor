@@ -77,7 +77,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     async loadWasmModule() {
         try {
-            this.wasmModule = await import("/pkg/wgpu_shader_canvas.js");
+            this.wasmModule = await import("../../pkg/wgpu_shader_canvas.js");
             const { load_shader_from_url, load_shader_from_text, reload_shader, get_current_shader_text } = this.wasmModule;
 
             // Initialize WASM

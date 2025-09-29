@@ -3,7 +3,6 @@ import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 import copy from 'rollup-plugin-copy';
 import gzipPlugin from 'rollup-plugin-gzip';
-import { defineConfig } from 'rollup';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -32,7 +31,9 @@ export default [
       }
     ],
     plugins: [
-      nodeResolve(),
+      nodeResolve({
+        preferBuiltins: false
+      }),
       commonjs(),
       copy({
         targets: [
@@ -46,25 +47,10 @@ export default [
         include: ['**/*.wasm', '**/*.js', '**/*.css'],
         minSize: 1024
       })
-    ]
-  },
-  // Syntax highlighting bundle
-  {
-    input: 'web/syntax-highlight.js',
-    output: {
-      file: 'dist/syntax-highlight.js',
-      format: 'umd',
-      name: 'SyntaxHighlight',
-      sourcemap: !isProduction
-    },
-    plugins: [
-      nodeResolve(),
-      commonjs(),
-      terser(),
-      gzipPlugin({
-        include: ['**/*.js'],
-        minSize: 1024
-      })
-    ]
+    ],
+    external: (id) => {
+      // Don't bundle the WASM module, let it be loaded at runtime
+      return id.includes('pkg/wgpu_shader_canvas.js');
+    }
   }
 ];
