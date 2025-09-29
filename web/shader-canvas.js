@@ -11,7 +11,6 @@ class ShaderCanvas {
         this.statusElement = null;
         this.wasmModule = null;
         this.isInitialized = false;
-        this.needsRecovery = false;
 
         this.init();
     }
@@ -138,42 +137,26 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     }
 
     loadShader(text) {
-        // If we need recovery, try to reload default shader first
-        if (this.needsRecovery) {
-            try {
-                console.log("Attempting recovery with default shader...");
-                this.wasmFunctions.reload_shader();
-                this.needsRecovery = false;
-            } catch (recoveryError) {
-                console.error("Recovery failed:", recoveryError);
-                // If recovery fails, we're in a bad state - don't try to compile
-                return;
-            }
-        }
-
+        console.log("Attempting to load shader");
         try {
-            // Always attempt to load the shader, even if empty
+            // Attempt to load the shader - Rust throws on error, returns undefined on success
             this.wasmFunctions.load_shader_from_text(text);
+            
+            // If we get here, the shader loaded successfully
             this.updateStatus('', false); // Hide status on success
-            this.needsRecovery = false; // Reset recovery flag on success
             console.log("Shader loaded successfully");
         } catch (error) {
-            this.updateStatus('Shader Error', true);
-            console.error("Failed to load shader:", error);
-            
-            // Check if this is a panic/panic-like error
-            if (error.message && error.message.includes('unreachable executed')) {
-                console.error("WASM module panicked - module may be in bad state");
-                this.needsRecovery = true;
-            } else {
-                this.needsRecovery = true; // Set recovery flag for next attempt
-            }
+            // Shader compilation failed - show the error message
+            this.updateStatus(`Shader Error`, true);
+            console.warn("Caught error:", error);
         }
     }
 
     reloadDefaultShader() {
         try {
             this.wasmFunctions.reload_shader();
+            
+            // If we get here, the reload was successful
             this.updateStatus('✓ Default shader reloaded', false);
             console.log("Default shader reloaded");
             
@@ -189,7 +172,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
                 }
             }, 100);
         } catch (error) {
-            this.updateStatus('✗ Reload failed', true);
+            // Reload failed - show the error message
+            this.updateStatus(`✗ Reload failed: ${error.message || error}`, true);
             console.error("Failed to reload shader:", error);
         }
     }

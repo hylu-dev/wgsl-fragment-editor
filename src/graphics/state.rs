@@ -158,11 +158,30 @@ impl State {
             return Err("Shader source cannot be empty".to_string());
         }
 
+        // Push an error scope to catch validation errors
+        self.device.push_error_scope(wgpu::ErrorFilter::Validation);
+
         // Try to create a new shader module
         let shader_result = self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Dynamic Shader"),
             source: wgpu::ShaderSource::Wgsl(shader_source.into()),
         });
+
+        // Check for shader compilation errors using pollster to handle the async pop
+        match pollster::block_on(self.device.pop_error_scope()) {
+            Some(wgpu::Error::Validation { description, .. }) => {
+                log::debug!("Shader compilation error: {}", description);
+                return Err(format!("Shader compilation error: {}", description));
+            }
+            None => {
+                // No error occurred, proceed
+                log::debug!("Shader module created successfully");
+            }
+            Some(other_error) => {
+                log::debug!("Other error during shader compilation: {:?}", other_error);
+                return Err(format!("Shader compilation error: {:?}", other_error));
+            }
+        }
 
         // Create new render pipeline with the new shader
         let (new_render_pipeline, new_camera_buffer, new_camera_bind_group) = 
@@ -173,13 +192,13 @@ impl State {
                 &shader_result
             );
 
-        // If we got here, the shader compiled successfully
+        // If we got here, everything succeeded
         self.render_pipeline = new_render_pipeline;
         self.camera_buffer = new_camera_buffer;
         self.camera_bind_group = new_camera_bind_group;
         self.current_shader = shader_source.to_string();
 
-        log::info!("Successfully loaded new shader ({} chars)", shader_source.len());
+        log::debug!("Successfully loaded new shader ({} chars)", shader_source.len());
         Ok(())
     }
 

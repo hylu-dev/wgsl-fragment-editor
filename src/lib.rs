@@ -84,7 +84,7 @@ where
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn reload_shader() -> Result<(), wasm_bindgen::JsValue> {
-    console::log_1(&"Reloading default shader".into());
+    // console::log_1(&"Reloading default shader".into());
     
     with_global_state(|state| {
         state.reload_default_shader()
@@ -94,7 +94,7 @@ pub fn reload_shader() -> Result<(), wasm_bindgen::JsValue> {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 pub fn load_shader_from_text(shader_text: &str) -> Result<(), wasm_bindgen::JsValue> {
-    console::log_1(&format!("Loading shader from text ({} chars)", shader_text.len()).into());
+    // console::log_1(&format!("Loading shader from text ({} chars)", shader_text.len()).into());
     
     with_global_state(|state| {
         state.load_shader(&shader_text)
