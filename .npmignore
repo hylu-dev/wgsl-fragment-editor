@@ -1,0 +1,23 @@
+# Source files
+src/
+web/
+Cargo.toml
+Cargo.lock
+rollup.config.js
+
+# Build artifacts
+pkg/
+
+# Development files
+example.html
+*.log
+
+# Git files
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo

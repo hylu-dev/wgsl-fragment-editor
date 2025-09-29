@@ -1,59 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shader Canvas</title>
-
-    <!-- Added link to the external stylesheet -->
-    <link rel="stylesheet" href="./web/style.css">
-
-    <!-- Page-level styles -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WGPU Shader Canvas Example</title>
+    <link rel="stylesheet" href="dist/style.css">
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
         body {
             margin: 0;
-            padding: 2rem;
-            font-family: monospace;
+            padding: 20px;
+            font-family: monospace, inherit;
             background-color: #1a1a1a;
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            color: white;
         }
-
-        #app-container {
-            display: flex;
-            height: calc(100vh - 4rem);
-            width: calc(100vw - 4rem);
-            max-width: 1200px;
-            max-height: 800px;
-            overflow: hidden;
+        #shader-container {
+            width: 800px;
+            height: 500px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
         }
     </style>
-
 </head>
-
 <body>
-    <!-- The shader canvas will be added here -->
-    <div id="app-container"></div>
+    <div class="container">
+        <h1>WGPU Shader Canvas Example</h1>
+        <div id="shader-container"></div>
+    </div>
 
-    <!-- Load the shader canvas -->
-    <script src="./web/shader-canvas.js"></script>
-    
-    <script type="module">
-        // Simple usage - just pass a selector
-        const shaderCanvas = new ShaderCanvas('#app-container');
+    <script src="dist/wgpu-shader-canvas.js"></script>
+    <script>
+        // Initialize the shader canvas
+        const canvas = new ShaderCanvas('#shader-container', {
+            initialShader: `@fragment
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    let uv = in.uv * 2.0 - 1.0;
+    var dist = sin(length(uv * 8.0 * PI) + u_time.t);
+    dist += sin(atan2(uv.y, uv.x) * 8.0 + u_time.t * 0.5);
+    let color = vec4<f32>(dist, dist, dist, 1.0);
+    return color;
+}`
+        });
 
-        // Make available globally for debugging
-        window.shaderCanvas = shaderCanvas;
+        console.log('Shader Canvas initialized:', canvas);
     </script>
 </body>
-
 </html>

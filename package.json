@@ -1,0 +1,38 @@
+{
+  "name": "wgpu-shader-canvas",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A WebGPU-based fragment shader canvas for interactive shader development",
+  "main": "dist/wgpu-shader-canvas.js",
+  "module": "dist/wgpu-shader-canvas.esm.js",
+  "types": "dist/wgpu_shader_canvas.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build:wasm": "wasm-pack build --target web --out-dir pkg",
+    "build:js": "rollup -c",
+    "build": "npm run build:wasm && npm run build:js",
+    "dev": "npm run build:wasm && rollup -c -w",
+    "clean": "rm -rf dist pkg",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "webgpu",
+    "shader",
+    "canvas",
+    "fragment",
+    "wgsl",
+    "graphics",
+    "webgl"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.52.3",
+    "rollup-plugin-copy": "^3.5.0"
+  }
+}
