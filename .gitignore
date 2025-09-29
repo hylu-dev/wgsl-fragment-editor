@@ -1,5 +1,5 @@
 # Build artifacts
-dist/
+# dist/ - commented out to allow GitHub Pages deployment
 pkg/
 
 # Node modules

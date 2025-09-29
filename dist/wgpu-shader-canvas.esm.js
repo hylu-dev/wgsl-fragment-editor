@@ -293,5 +293,5 @@ if (typeof module !== 'undefined' && module.exports) {
     window.ShaderCanvas = ShaderCanvas;
 }
 
-// ES module export
-export default ShaderCanvas;
+export { ShaderCanvas as default };
+//# sourceMappingURL=wgpu-shader-canvas.esm.js.map

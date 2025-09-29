@@ -31,8 +31,9 @@
         <div id="shader-container"></div>
     </div>
 
-    <script src="dist/wgpu-shader-canvas.js"></script>
-    <script>
+    <script type="module">
+        import ShaderCanvas from './dist/wgpu-shader-canvas.js';
+        
         // Initialize the shader canvas
         const canvas = new ShaderCanvas('#shader-container', {
             initialShader: `@fragment

@@ -13,14 +13,12 @@ export default [
     output: [
       {
         file: 'dist/wgpu-shader-canvas.js',
-        format: 'umd',
-        name: 'ShaderCanvas',
+        format: 'es',
         sourcemap: !isProduction
       },
       {
         file: 'dist/wgpu-shader-canvas.min.js',
-        format: 'umd',
-        name: 'ShaderCanvas',
+        format: 'es',
         sourcemap: !isProduction,
         plugins: [terser()]
       },
@@ -50,7 +48,7 @@ export default [
     ],
     external: (id) => {
       // Don't bundle the WASM module, let it be loaded at runtime
-      return id.includes('pkg/wgpu_shader_canvas.js');
+      return id.includes('dist/wgpu_shader_canvas.js');
     }
   }
 ];
