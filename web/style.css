@@ -1,90 +1,72 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
-
-:root {
-    font-family: "JetBrains Mono", monospace, serif;
-    color: white;
-    background: #222;
+/* Shader Canvas Module Styles */
+.code-panel {
+    display: flex;
+    height: 100%;
+    width: 100%;
 }
 
-body {
+.code-editor-container {
+    flex: 1;
     display: flex;
     flex-direction: column;
+    border-right: 1px solid #ccc;
+}
+
+@media (prefers-color-scheme: dark) {
+    .code-editor-container {
+        border-right-color: #555;
+    }
+}
+
+.code-editor {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+}
+
+.canvas-panel {
+    display: flex;
     justify-content: center;
     align-items: center;
+    flex: 0 0 auto;
+    position: relative;
 }
 
-/* WGPU Canvas Styling */
-canvas {
-    background-color: black;
-    width: 720px;
-    height: 720px;
-    display: block;
-    border-radius: 8px;
+.shader-canvas {
+    width: auto;
+    height: 100%;
+    aspect-ratio: 1;
+    background-color: #000000;
+    border-radius: 0 8px 8px 0px;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none;
 }
 
-canvas:focus {
-    outline: none; /* Removes the border/outline when focused */
-}
-
-/* Shader Controls Styling */
-.controls {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #2a2a2a;
-    border-radius: 8px;
-    border: 1px solid #4CAF50;
-}
-
-.controls h3 {
-    color: #4CAF50;
-    margin-top: 0;
-}
-
-.control-group {
-    margin-bottom: 15px;
-}
-
-.control-group label {
-    display: block;
-    margin-bottom: 5px;
+.shader-status {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 0.25rem 0.5rem;
+    background-color: #dc3545;
     color: #ffffff;
-}
-
-.control-group input[type="text"] {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #4CAF50;
+    font-size: 11px;
     border-radius: 4px;
-    background-color: #1a1a1a;
-    color: #ffffff;
-    font-family: "JetBrains Mono", monospace;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 10;
 }
 
-.control-group textarea {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #4CAF50;
-    border-radius: 4px;
-    background-color: #1a1a1a;
-    color: #ffffff;
-    font-family: "JetBrains Mono", monospace;
-    resize: vertical;
-}
-
-.control-group button {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-family: "JetBrains Mono", monospace;
-}
-
-.control-group button:hover {
-    background-color: #45a049;
+.shader-status.show {
+    opacity: 1;
 }

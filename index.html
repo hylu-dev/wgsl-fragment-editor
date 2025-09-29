@@ -5,255 +5,59 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WGPU Renderer</title>
+    <title>Shader Canvas</title>
 
-    <!-- Added link to the new external stylesheet -->
+    <!-- Added link to the external stylesheet -->
     <link rel="stylesheet" href="./web/style.css">
+
+    <!-- Page-level styles -->
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 2rem;
+            font-family: monospace;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #app-container {
+            display: flex;
+            height: calc(100vh - 4rem);
+            width: calc(100vw - 4rem);
+            max-width: 1200px;
+            max-height: 800px;
+            overflow: hidden;
+        }
+    </style>
 
 </head>
 
 <body>
-    <h1>WGPU Renderer</h1>
-    <canvas id="canvas"></canvas>
+    <!-- The shader canvas will be added here -->
+    <div id="app-container"></div>
 
-    <div class="controls">
-        <h3>Shader Controls</h3>
-        <div class="control-group">
-            <label for="shader-url">Load shader from URL:</label>
-            <input type="text" id="shader-url" placeholder="path/to/shader.wgsl" value="src/shader.wgsl">
-            <button onclick="loadShaderFromUrl(document.getElementById('shader-url').value)">Load Shader</button>
-        </div>
-
-        <div class="control-group">
-            <label for="shader-text">Or paste shader code:</label>
-            <textarea id="shader-text" rows="10" cols="50" placeholder="Paste your WGSL shader code here...">// Example shader - try editing this!
-const PI: f32 = 3.1415926535;
-
-struct VertexInput {
-    @location(0) pos: vec3<f32>,
-    @location(1) color: vec3<f32>,
-};
-
-struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
-    @location(0) uv: vec2<f32>,
-    @location(1) color: vec3<f32>,
-};
-
-@vertex
-fn vs_main(model: VertexInput) -> VertexOutput {
-    var out: VertexOutput;
-    out.color = model.color;
-    out.clip_position = vec4<f32>(model.pos, 1.0);
-    out.uv = vec2<f32>(model.pos.x * 0.5 + 0.5, model.pos.y * 0.5 + 0.5);
-    return out;
-}
-
-@fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let uv = in.uv * 2.0 - 1.0;
-    let dist = sin(length(uv * 8.0 * PI));
-    let color = vec4<f32>(dist, dist, dist, 1.0);
-    return color;
-}</textarea>
-            <button onclick="loadShaderFromText(document.getElementById('shader-text').value)">Load Shader Code</button>
-        </div>
-
-        <div class="control-group">
-            <button onclick="reloadShader()">Reload Default Shader</button>
-            <button onclick="showCurrentShader()">Show Current Shader</button>
-        </div>
-
-        <div class="control-group">
-            <h4>Example Shaders:</h4>
-            <button onclick="loadExampleShader('rainbow')">Rainbow</button>
-            <button onclick="loadExampleShader('checkerboard')">Checkerboard</button>
-            <button onclick="loadExampleShader('plasma')">Plasma</button>
-        </div>
-    </div>
-
+    <!-- Load the shader canvas -->
+    <script src="./web/shader-canvas.js"></script>
+    
     <script type="module">
-        // Import the module and get the functions
-        const module = await import("/pkg/wgpu_shader_canvas.js");
-        const { load_shader_from_url, load_shader_from_text, reload_shader, get_current_shader_text } = module;
+        // Simple usage - just pass a selector
+        const shaderCanvas = new ShaderCanvas('#app-container');
 
-        // Initialize WASM (ignore control flow exceptions)
-        const init = module.default;
-        try {
-            await init();
-        } catch (wasmError) {
-            // WASM initialization might throw "exceptions for control flow" - this is normal
-        }
+        // Make available globally for debugging
+        window.shaderCanvas = shaderCanvas;
 
-        // Make functions available globally
-        window.loadShaderFromUrl = (url) => {
-            try {
-                load_shader_from_url(url);
-                console.log(`Shader load request sent for: ${url}`);
-            } catch (error) {
-                console.error(`Failed to load shader from ${url}:`, error);
-                alert(`Failed to load shader: ${error}`);
-            }
-        };
-
-        window.loadShaderFromText = (text) => {
-            try {
-                load_shader_from_text(text);
-                console.log("Shader text load request sent");
-            } catch (error) {
-                console.error("Failed to load shader from text:", error);
-                alert(`Failed to load shader: ${error}`);
-            }
-        };
-
-        window.reloadShader = () => {
-            try {
-                reload_shader();
-                console.log("Shader reload request sent");
-            } catch (error) {
-                console.error("Failed to reload shader:", error);
-                alert(`Failed to reload shader: ${error}`);
-            }
-        };
-
-        window.getCurrentShader = () => {
-            try {
-                const shader = get_current_shader_text();
-                if (shader) {
-                    console.log("Current shader:", shader);
-                    return shader;
-                } else {
-                    console.log("No shader currently loaded");
-                    return null;
-                }
-            } catch (error) {
-                console.error("Failed to get current shader:", error);
-                return null;
-            }
-        };
-
-        window.showCurrentShader = () => {
-            try {
-                const shader = get_current_shader_text();
-                if (shader) {
-                    document.getElementById('shader-text').value = shader;
-                    console.log("Current shader loaded into text area");
-                } else {
-                    alert("No shader currently loaded");
-                }
-            } catch (error) {
-                console.error("Failed to get current shader:", error);
-                alert(`Failed to get current shader: ${error}`);
-            }
-        };
-
-        window.loadExampleShader = (type) => {
-            const examples = {
-                rainbow: `// Rainbow shader
-const PI: f32 = 3.1415926535;
-
-struct VertexInput {
-    @location(0) pos: vec3<f32>,
-    @location(1) color: vec3<f32>,
-};
-
-struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
-    @location(0) uv: vec2<f32>,
-    @location(1) color: vec3<f32>,
-};
-
-@vertex
-fn vs_main(model: VertexInput) -> VertexOutput {
-    var out: VertexOutput;
-    out.color = model.color;
-    out.clip_position = vec4<f32>(model.pos, 1.0);
-    out.uv = vec2<f32>(model.pos.x * 0.5 + 0.5, model.pos.y * 0.5 + 0.5);
-    return out;
-}
-
-@fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let uv = in.uv * 2.0 - 1.0;
-    let angle = atan2(uv.y, uv.x);
-    let r = sin(angle * 3.0 + PI * 0.0) * 0.5 + 0.5;
-    let g = sin(angle * 3.0 + PI * 0.66) * 0.5 + 0.5;
-    let b = sin(angle * 3.0 + PI * 1.33) * 0.5 + 0.5;
-    return vec4<f32>(r, g, b, 1.0);
-}`,
-                checkerboard: `// Checkerboard shader
-struct VertexInput {
-    @location(0) pos: vec3<f32>,
-    @location(1) color: vec3<f32>,
-};
-
-struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
-    @location(0) uv: vec2<f32>,
-    @location(1) color: vec3<f32>,
-};
-
-@vertex
-fn vs_main(model: VertexInput) -> VertexOutput {
-    var out: VertexOutput;
-    out.color = model.color;
-    out.clip_position = vec4<f32>(model.pos, 1.0);
-    out.uv = vec2<f32>(model.pos.x * 0.5 + 0.5, model.pos.y * 0.5 + 0.5);
-    return out;
-}
-
-@fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let uv = in.uv * 8.0;
-    let checker = (floor(uv.x) + floor(uv.y)) % 2.0;
-    return vec4<f32>(checker, checker, checker, 1.0);
-}`,
-                plasma: `// Plasma shader
-const PI: f32 = 3.1415926535;
-
-struct VertexInput {
-    @location(0) pos: vec3<f32>,
-    @location(1) color: vec3<f32>,
-};
-
-struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
-    @location(0) uv: vec2<f32>,
-    @location(1) color: vec3<f32>,
-};
-
-@vertex
-fn vs_main(model: VertexInput) -> VertexOutput {
-    var out: VertexOutput;
-    out.color = model.color;
-    out.clip_position = vec4<f32>(model.pos, 1.0);
-    out.uv = vec2<f32>(model.pos.x * 0.5 + 0.5, model.pos.y * 0.5 + 0.5);
-    return out;
-}
-
-@fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let uv = in.uv * 2.0 - 1.0;
-    let plasma = sin(uv.x * 10.0) + sin(uv.y * 10.0) + sin((uv.x + uv.y) * 10.0) + sin(sqrt(uv.x * uv.x + uv.y * uv.y) * 10.0);
-    let r = sin(plasma + 0.0) * 0.5 + 0.5;
-    let g = sin(plasma + 2.0) * 0.5 + 0.5;
-    let b = sin(plasma + 4.0) * 0.5 + 0.5;
-    return vec4<f32>(r, g, b, 1.0);
-}`
-            };
-
-            if (examples[type]) {
-                document.getElementById('shader-text').value = examples[type];
-                loadShaderFromText(examples[type]);
-            }
-        };
-
-        console.log("Shader loading functions available:");
-        console.log("- loadShaderFromUrl(url)");
-        console.log("- loadShaderFromText(text)");
-        console.log("- reloadShader()");
-        console.log("- getCurrentShader()");
-        console.log("Note: Shader updates are logged to console. Integrate with your pipeline to see actual changes.");
+        console.log("Shader Canvas initialized!");
+        console.log("- Simple usage: new ShaderCanvas('#app-container')");
+        console.log("- Code left, canvas right");
+        console.log("- Edit shader code to see live updates");
     </script>
 </body>
 
