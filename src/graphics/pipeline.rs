@@ -1,12 +1,12 @@
 use wgpu::util::DeviceExt;
-use crate::graphics::camera::{Camera, CameraUniform};
+use crate::graphics::camera::{Camera, CameraUniform, TimeUniform};
 use crate::graphics::vertex::Vertex;
 
 pub fn create_render_pipeline(
     device: &wgpu::Device,
     config: &wgpu::SurfaceConfiguration,
     camera: &Camera
-) -> (wgpu::RenderPipeline, wgpu::Buffer, wgpu::BindGroup) {
+) -> (wgpu::RenderPipeline, wgpu::Buffer, wgpu::BindGroup, wgpu::Buffer, wgpu::BindGroup) {
     // Shader Setup
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Shader"),
@@ -21,7 +21,7 @@ pub fn create_render_pipeline_with_shader(
     config: &wgpu::SurfaceConfiguration,
     camera: &Camera,
     shader: &wgpu::ShaderModule,
-) -> (wgpu::RenderPipeline, wgpu::Buffer, wgpu::BindGroup) {
+) -> (wgpu::RenderPipeline, wgpu::Buffer, wgpu::BindGroup, wgpu::Buffer, wgpu::BindGroup) {
     let mut camera_uniform = CameraUniform::new();
     camera_uniform.update_view_proj(&camera);
 
@@ -33,11 +33,31 @@ pub fn create_render_pipeline_with_shader(
         }
     );
 
+    let time_uniform = TimeUniform::new(0.0);
+
+    let time_buffer = device.create_buffer_init(
+        &wgpu::util::BufferInitDescriptor {
+            label: Some("Time Buffer"),
+            contents: bytemuck::cast_slice(&[time_uniform]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        }
+    );
+
     let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         entries: &[
             wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 1,
+                visibility: wgpu::ShaderStages::FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
@@ -55,10 +75,16 @@ pub fn create_render_pipeline_with_shader(
             wgpu::BindGroupEntry {
                 binding: 0,
                 resource: camera_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: time_buffer.as_entire_binding(),
             }
         ],
         label: Some("camera_bind_group"),
     });
+
+    let time_bind_group = camera_bind_group.clone();
 
     let render_pipeline_layout =
         device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -107,5 +133,5 @@ pub fn create_render_pipeline_with_shader(
         cache: None,
     });
 
-    (render_pipeline, camera_buffer, camera_bind_group)
+    (render_pipeline, camera_buffer, camera_bind_group, time_buffer, time_bind_group)
 }

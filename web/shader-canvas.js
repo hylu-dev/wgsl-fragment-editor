@@ -144,11 +144,11 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
             
             // If we get here, the shader loaded successfully
             this.updateStatus('Shader Error', false); // Hide status on success
-            console.log("Shader loaded successfully");
+            //console.log("Shader loaded successfully");
         } catch (error) {
             // Shader compilation failed - show the error message
             this.updateStatus(`Shader Error`, true);
-            console.warn("Caught error:", error);
+            //console.warn("Caught error:", error);
         }
     }
 
@@ -168,13 +168,13 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
                         this.codeEditor.value = shader;
                     }
                 } catch (error) {
-                    console.error("Failed to get current shader:", error);
+                    // console.error("Failed to get current shader:", error);
                 }
             }, 100);
         } catch (error) {
             // Reload failed - show the error message
             this.updateStatus(`✗ Reload failed: ${error.message || error}`, true);
-            console.error("Failed to reload shader:", error);
+            //console.error("Failed to reload shader:", error);
         }
     }
 

@@ -21,6 +21,7 @@
     flex: 0 0 auto;
     position: relative;
     aspect-ratio: 1;
+    border-radius: 0, 8px, 8px, 0;
 }
 
 /* Code Editor */

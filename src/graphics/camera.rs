@@ -43,6 +43,23 @@ impl CameraUniform {
     }
 }
 
+// Time uniform for shaders - 16-byte aligned with direct u_time access
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct TimeUniform {
+    pub u_time: f32,
+    pub _padding: [f32; 3], // Padding to align to 16 bytes
+}
+
+impl TimeUniform {
+    pub fn new(time: f32) -> Self {
+        Self {
+            u_time: time,
+            _padding: [0.0; 3],
+        }
+    }
+}
+
 // Ensure models are centered on (0, 0, 0)
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::from_cols(

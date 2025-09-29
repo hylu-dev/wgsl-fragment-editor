@@ -9,6 +9,9 @@ use crate::graphics::{create_gpu_resources, create_render_pipeline};
 use crate::graphics::vertex::{create_index_buffer, create_vertex_buffer, INDICES};
 use crate::graphics::camera::Camera;
 
+#[cfg(target_arch = "wasm32")]
+use web_sys::Performance;
+
 pub struct State {
     pub background_color: wgpu::Color,
     pub camera: Camera,
@@ -23,8 +26,12 @@ pub struct State {
     pub num_indices: u32,
     pub camera_buffer: wgpu::Buffer,
     pub camera_bind_group: wgpu::BindGroup,
+    pub time_buffer: wgpu::Buffer,
+    pub time_bind_group: wgpu::BindGroup,
     pub window: Arc<Window>,
     pub current_shader: String,
+    #[cfg(target_arch = "wasm32")]
+    pub performance: Performance,
 }
 
 impl State {
@@ -44,10 +51,16 @@ impl State {
             zfar: 100.0,
         };
 
-        let (render_pipeline, camera_buffer, camera_bind_group) = create_render_pipeline(&device, &config, &camera);
+        let (render_pipeline, camera_buffer, camera_bind_group, time_buffer, time_bind_group) = create_render_pipeline(&device, &config, &camera);
         let vertex_buffer = create_vertex_buffer(&device);
         let index_buffer = create_index_buffer(&device);
         let num_indices = INDICES.len() as u32;
+
+        #[cfg(target_arch = "wasm32")]
+        let performance = web_sys::window()
+            .unwrap()
+            .performance()
+            .unwrap();
 
         Ok(Self {
             surface,
@@ -68,8 +81,12 @@ impl State {
             num_indices,
             camera_buffer,
             camera_bind_group,
+            time_buffer,
+            time_bind_group,
             render_pipeline,
             current_shader: include_str!("../shader.wgsl").to_string(),
+            #[cfg(target_arch = "wasm32")]
+            performance,
         })
     }
 
@@ -149,7 +166,18 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        // Future update logic goes here
+        // Update time uniform
+        #[cfg(target_arch = "wasm32")]
+        let elapsed = (self.performance.now() / 1000.0) as f32; // Convert from milliseconds to seconds
+        
+        #[cfg(not(target_arch = "wasm32"))]
+        let elapsed = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs_f32();
+            
+        let time_uniform = crate::graphics::camera::TimeUniform::new(elapsed);
+        self.queue.write_buffer(&self.time_buffer, 0, bytemuck::cast_slice(&[time_uniform]));
     }
 
     pub fn load_shader(&mut self, shader_source: &str) -> Result<(), String> {
@@ -184,7 +212,7 @@ impl State {
         }
 
         // Create new render pipeline with the new shader
-        let (new_render_pipeline, new_camera_buffer, new_camera_bind_group) = 
+        let (new_render_pipeline, new_camera_buffer, new_camera_bind_group, new_time_buffer, new_time_bind_group) = 
             crate::graphics::pipeline::create_render_pipeline_with_shader(
                 &self.device, 
                 &self.config, 
@@ -196,6 +224,8 @@ impl State {
         self.render_pipeline = new_render_pipeline;
         self.camera_buffer = new_camera_buffer;
         self.camera_bind_group = new_camera_bind_group;
+        self.time_buffer = new_time_buffer;
+        self.time_bind_group = new_time_bind_group;
         self.current_shader = shader_source.to_string();
 
         log::debug!("Successfully loaded new shader ({} chars)", shader_source.len());
