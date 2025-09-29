@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+
+:root {
+    font-family: "JetBrains Mono", monospace, serif;
+    color: white;
+    background: #222;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* WGPU Canvas Styling */
+canvas {
+    background-color: black;
+    width: 720px;
+    height: 720px;
+    display: block;
+    border-radius: 8px;
+}
+
+canvas:focus {
+    outline: none; /* Removes the border/outline when focused */
+}
+
+/* Shader Controls Styling */
+.controls {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #2a2a2a;
+    border-radius: 8px;
+    border: 1px solid #4CAF50;
+}
+
+.controls h3 {
+    color: #4CAF50;
+    margin-top: 0;
+}
+
+.control-group {
+    margin-bottom: 15px;
+}
+
+.control-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ffffff;
+}
+
+.control-group input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #4CAF50;
+    border-radius: 4px;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    font-family: "JetBrains Mono", monospace;
+}
+
+.control-group textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #4CAF50;
+    border-radius: 4px;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    font-family: "JetBrains Mono", monospace;
+    resize: vertical;
+}
+
+.control-group button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: "JetBrains Mono", monospace;
+}
+
+.control-group button:hover {
+    background-color: #45a049;
+}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WGPU Renderer</title>
+
+    <!-- Added link to the new external stylesheet -->
+    <link rel="stylesheet" href="./web/style.css">
+
+</head>
+
+<body>
+    <h1>WGPU Renderer</h1>
+    <canvas id="canvas"></canvas>
+    
+    <div class="controls">
+        <h3>Shader Controls</h3>
+        <div class="control-group">
+            <label for="shader-url">Load shader from URL:</label>
+            <input type="text" id="shader-url" placeholder="path/to/shader.wgsl" value="src/shader.wgsl">
+            <button onclick="loadShaderFromUrl(document.getElementById('shader-url').value)">Load Shader</button>
+        </div>
+        
+        <div class="control-group">
+            <label for="shader-text">Or paste shader code:</label>
+            <textarea id="shader-text" rows="10" cols="50" placeholder="Paste your WGSL shader code here...">// Example shader - try editing this!
+const PI: f32 = 3.1415926535;
+
+struct VertexInput {
+    @location(0) pos: vec3<f32>,
+    @location(1) color: vec3<f32>,
+};
+
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) uv: vec2<f32>,
+    @location(1) color: vec3<f32>,
+};
+
+@vertex
+fn vs_main(model: VertexInput) -> VertexOutput {
+    var out: VertexOutput;
+    out.color = model.color;
+    out.clip_position = vec4<f32>(model.pos, 1.0);
+    out.uv = vec2<f32>(model.pos.x * 0.5 + 0.5, model.pos.y * 0.5 + 0.5);
+    return out;
+}
+
+@fragment
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    let uv = in.uv * 2.0 - 1.0;
+    let dist = sin(length(uv * 8.0 * PI));
+    let color = vec4<f32>(dist, dist, dist, 1.0);
+    return color;
+}</textarea>
+            <button onclick="loadShaderFromText(document.getElementById('shader-text').value)">Load Shader Code</button>
+        </div>
+        
+        <div class="control-group">
+            <button onclick="reloadShader()">Reload Current Shader</button>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Import the module and get the functions
+        const module = await import("/pkg/wgpu_shader_canvas.js");
+        const { load_shader_from_url, load_shader_from_text, reload_shader, get_current_shader_text } = module;
+        
+        // Initialize WASM (ignore control flow exceptions)
+        const init = module.default;
+        try {
+            await init();
+        } catch (wasmError) {
+            // WASM initialization might throw "exceptions for control flow" - this is normal
+        }
+        
+        // Make functions available globally
+        window.loadShaderFromUrl = (url) => {
+            try {
+                load_shader_from_url(url);
+                console.log(`Shader load request sent for: ${url}`);
+            } catch (error) {
+                console.error(`Failed to load shader from ${url}:`, error);
+                alert(`Failed to load shader: ${error}`);
+            }
+        };
+        
+        window.loadShaderFromText = (text) => {
+            try {
+                load_shader_from_text(text);
+                console.log("Shader text load request sent");
+            } catch (error) {
+                console.error("Failed to load shader from text:", error);
+                alert(`Failed to load shader: ${error}`);
+            }
+        };
+        
+        window.reloadShader = () => {
+            try {
+                reload_shader();
+                console.log("Shader reload request sent");
+            } catch (error) {
+                console.error("Failed to reload shader:", error);
+                alert(`Failed to reload shader: ${error}`);
+            }
+        };
+        
+        window.getCurrentShader = () => {
+            try {
+                const shader = get_current_shader_text();
+                if (shader) {
+                    console.log("Current shader:", shader);
+                    return shader;
+                } else {
+                    console.log("No shader currently loaded");
+                    return null;
+                }
+            } catch (error) {
+                console.error("Failed to get current shader:", error);
+                return null;
+            }
+        };
+        
+        console.log("Shader loading functions available:");
+        console.log("- loadShaderFromUrl(url)");
+        console.log("- loadShaderFromText(text)");
+        console.log("- reloadShader()");
+        console.log("- getCurrentShader()");
+        console.log("Note: Shader updates are logged to console. Integrate with your pipeline to see actual changes.");
+    </script>
+    </body>
+</html>
