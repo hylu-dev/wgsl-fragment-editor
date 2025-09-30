@@ -73,12 +73,12 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         // Clear existing content and add the shader canvas layout
         this.container.innerHTML = `
             <div class="code-panel">
-                <div class="code-editor-container">
-                    <div id="shader-text" class="code-editor"></div>
-                </div>
                 <div class="canvas-panel">
                     <canvas id="canvas" class="shader-canvas"></canvas>
                     <div class="shader-status" id="shader-status"></div>
+                </div>
+                <div class="code-editor-container">
+                    <div id="shader-text" class="code-editor"></div>
                 </div>
             </div>
         `;
@@ -111,21 +111,23 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
                     EditorView.theme({
                         "&": {
                             height: "100%",
-                            minHeight: "0",
-                            fontSize: "14px"
+                            minHeight: "100%",
+                            fontSize: "14px",
+                            fontFamily: "'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace"
                         },
                         ".cm-content": {
                             padding: "10px",
                             height: "100%",
-                            minHeight: "0"
+                            minHeight: "100%"
                         },
                         ".cm-editor": {
                             height: "100%",
-                            minHeight: "0"
+                            minHeight: "100%"
                         },
                         ".cm-scroller": {
-                            fontFamily: "monospace",
-                            overflow: "auto"
+                            fontFamily: "'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace",
+                            height: "100%",
+                            minHeight: "100%"
                         },
                         ".cm-focused": {
                             outline: "none"
@@ -140,6 +142,10 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
             }),
             parent: this.codeEditorElement
         });
+
+        // Force the editor to fill its container
+        this.codeEditor.dom.style.height = "100%";
+        this.codeEditor.dom.style.minHeight = "100%";
     }
 
     async loadWasmModule() {
